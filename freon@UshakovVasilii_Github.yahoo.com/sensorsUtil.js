@@ -60,7 +60,7 @@ var SensorsUtil = class extends CommandLineUtil.CommandLineUtil {
         return this._parseSensorsOutput(sensorFilter, sensorType, true);
     }
 
-  _parseSensorsOutput(sensorFilter, sensorType, gpuFlag) {
+    _parseSensorsOutput(sensorFilter, sensorType, gpuFlag) {
         if(!this._data)
             return [];
 

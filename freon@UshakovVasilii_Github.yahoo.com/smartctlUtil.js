@@ -1,21 +1,43 @@
 const GLib = imports.gi.GLib;
-
-const Me = imports.misc.extensionUtils.getCurrentExtension();
 const ByteArray = imports.byteArray;
-function getSmartData (argv){
-    const smartctl = GLib.find_program_in_path('smartctl')
-    return JSON.parse(ByteArray.toString( GLib.spawn_command_line_sync(`${smartctl} ${argv} -j`)[1] ))
-}
+const Me = imports.misc.extensionUtils.getCurrentExtension();
+const CommandLineUtil = Me.imports.commandLineUtil;
 
-var smartctlUtil  = class {
+var smartctlUtil = class{
+
     constructor(callback) {
-        this._smartDevices = [];
         try {
-            this._smartDevices = getSmartData("--scan")["devices"]
-	    global.log('[FREON] test devices: ' + e);
+            this._smartDevices = this.listSmartDevices();
         } catch (e) {
             global.log('[FREON] Unable to find smart devices: ' + e);
-        }        
+        }
+
+        this._updated = true;
+    }
+
+    execute(callback){
+        this._smartDevices.forEach((dev) => {
+            const devName = dev.name;
+
+            const cmd = new CommandLineUtil.CommandLineUtil();
+            const sudo = GLib.find_program_in_path('sudo');
+            const smartctl = GLib.find_program_in_path('smartctl');
+            cmd._argv = [sudo, smartctl, "--attributes", devName, "-j"];
+
+            cmd.execute(() => {
+                if(cmd._error_output.length > 0){
+                    global.log(`[FREON] Unable to query smart device ${devName}:\n ${cmd._error_output.join('\n')}`);
+                }else{
+                    const devData = JSON.parse(cmd._output.join(' '));
+                    dev.temp = parseFloat(devData.temperature.current);
+                }
+
+                cmd.destroy();
+
+                if(callback) callback();
+            });
+        });
+
         this._updated = true;
     }
 
@@ -34,18 +56,42 @@ var smartctlUtil  = class {
     get temp() {
         return this._smartDevices.map(device => {
             return {
-                label: getSmartData(`--info ${device["name"]}`)["model_name"],
-                temp: parseFloat(getSmartData(`--attributes ${device["name"]}`).temperature.current)
+                label: device.label,
+                temp: device.temp
             }
         })
     }
 
     destroy(callback) {
         this._smartDevices = [];
+        if(callback) callback();
     }
 
-    execute(callback) {
-        this._updated = true;
-    }
+    /**
+     * 
+     * @returns [{name, label, temp}, ...]
+     */
+    listSmartDevices(){
+        let ret = [];
 
+        const sudo = GLib.find_program_in_path('sudo');
+        const smartctl = GLib.find_program_in_path('smartctl');
+
+        // list devices
+        const devListData = JSON.parse(ByteArray.toString(GLib.spawn_command_line_sync(`${sudo} ${smartctl} --scan -j`)[1]));
+        devListData.devices.forEach((dev) => {
+            const devName = dev.name;
+            // query labels
+            const devData = JSON.parse(ByteArray.toString(GLib.spawn_command_line_sync(`${sudo} ${smartctl} --info ${devName} -j`)[1]));
+            const devLabel = devData.model_name;
+
+            ret.push({
+                name: devName,
+                label: devLabel,
+                temp: -1
+            });
+        });
+
+        return ret;
+    }
 };

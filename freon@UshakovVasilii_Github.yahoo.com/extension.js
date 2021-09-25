@@ -203,9 +203,7 @@ const FreonMenuButton = GObject.registerClass(class Freon_FreonMenuButton extend
                 this._utils.disks = new HddtempUtil.HddtempUtil();
                 break;
             case 'udisks2':
-                this._utils.disks = new UDisks2.UDisks2(() => {
-                    // this._updateDisplay(); we cannot change actor in background thread #74
-                });
+                this._utils.disks = new UDisks2.UDisks2(() => {});
                 break;
             case 'smartctl':
                 this._utils.disks = new smartctlUtil.smartctlUtil();
@@ -300,9 +298,7 @@ const FreonMenuButton = GObject.registerClass(class Freon_FreonMenuButton extend
     _querySensors(){
         for (let sensor of Object.values(this._utils)) {
             if (sensor.available) {
-                sensor.execute(() => {
-                    // we cannot change actor in background thread #74
-                });
+                sensor.execute(() => {});
             }
         }
     }

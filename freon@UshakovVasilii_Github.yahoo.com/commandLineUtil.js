@@ -14,21 +14,24 @@ var CommandLineUtil = class {
             this._callback = callback;
 
             let proc = Gio.Subprocess.new(this._argv,
-                                          Gio.SubprocessFlags.STDOUT_PIPE |
-                                          Gio.SubprocessFlags.STDERR_PIPE);
+                                          Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE);
 
-            proc.communicate_utf8_async(null, null, (proc, result) => {
-                try {
-                    let [, stdout, stderr] = proc.communicate_utf8_finish(result);
-
-                    this._output = stdout ? stdout.split('\n') : [];
-                    this._error_output = stderr ? stderr.split('\n') : [];
-                } catch (e) {
-                    logError(e);
-                } finally {
-                    callback();
-                    this._updated = true;
-                }
+            proc.wait_async(null, (proc, result) => {
+                proc.wait_finish(result);
+    
+                proc.communicate_utf8_async(null, null, (proc, result) => {
+                    try {
+                        let [, stdout, stderr] = proc.communicate_utf8_finish(result);
+    
+                        this._output = stdout ? stdout.split('\n') : [];
+                        this._error_output = stderr ? stderr.split('\n') : [];
+                    } catch (e) {
+                        logError(e);
+                    } finally {
+                        callback();
+                        this._updated = true;
+                    }
+                });
             });
         } catch(e){
             global.log(e.toString());
