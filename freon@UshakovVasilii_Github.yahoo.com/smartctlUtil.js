@@ -16,6 +16,8 @@ var smartctlUtil = class{
     }
 
     execute(callback){
+        let toExecute = this._smartDevices.length;
+
         this._smartDevices.forEach((dev) => {
             const devName = dev.name;
 
@@ -34,11 +36,12 @@ var smartctlUtil = class{
 
                 cmd.destroy();
 
-                if(callback) callback();
+                if(--toExecute === 0){
+                    this._updated = true;
+                    if(callback) callback();
+                }
             });
         });
-
-        this._updated = true;
     }
 
     get available(){
