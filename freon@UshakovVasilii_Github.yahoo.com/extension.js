@@ -20,6 +20,7 @@ const liquidctlUtil = Me.imports.liquidctlUtil;
 const smartctlUtil = Me.imports.smartctlUtil;
 const nvmecliUtil = Me.imports.nvmecliUtil;
 const BumblebeeNvidiaUtil = Me.imports.bumblebeeNvidiaUtil;
+const Udisks2PlusSmartctl = Me.imports.Udisks2PlusSmartctl;
 const FreonItem = Me.imports.freonItem;
 
 const Gettext = imports.gettext.domain(Me.metadata['gettext-domain']);
@@ -210,6 +211,9 @@ const FreonMenuButton = GObject.registerClass(class Freon_FreonMenuButton extend
                 break;
             case 'nvmecli':
                 this._utils.disks = new nvmecliUtil.nvmecliUtil();
+                break;
+            case 'udisk2_p_smartctl':
+                this._utils.disks = new Udisks2PlusSmartctl.Udisks2PlusSmartctl();
                 break;
         }
     }
